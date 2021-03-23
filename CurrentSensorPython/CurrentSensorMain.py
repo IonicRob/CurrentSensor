@@ -5,58 +5,70 @@
 
 import serial
 import datetime
+import matplotlib.pyplot as plt
 
-x = datetime.datetime.now()
-print(x)
+codeStartTime = datetime.datetime.now()
 
-
-arduino_port = "COM3"  # Serial port of Arduino
+# Editable Inputs
+fileName = "analog-data" + codeStartTime.strftime("_%y-%H-%M-%S") + ".csv"  # Name of the CSV file generated. I added
+# the date time to avoid it overwriting the file of a same name.
+arduino_port = "COM3"  # Serial port of the Arduino in your PC
 baud = 9600  # Arduino uno runs at 9600 baud
-fileName = "analog-data.csv"  # Name of the CSV file generated
+RecordingDuration = 0.5  # In minutes.
+
+endTime = datetime.datetime.now() + datetime.timedelta(minutes=RecordingDuration)
+print('Started CurrentSensorV3 @ ' + codeStartTime.strftime("%H:%M:%S") + '\n' + 'Made by Robert J Scales - March 2021')
 
 ser = serial.Serial(arduino_port, baud)
 print("Connected to Arduino port:" + arduino_port)
 file = open(fileName, "w")
-print("Created file")
+print("Created file\n")
 
-# # Display the data to the terminal
-# getData = str(ser.readline())
-# data = getData[0:][:-2]
-# print(data)
-#
-# # Add the data to the file
-# f = open(fileName, "a")  # Append the data to the file
-# f.write(data + "\\n")  # Write data with a newline
-#
-# # Close out the file
-# file.close()
+headers = "Time (m:s:mu_s):,Bus Voltage (V):,Shunt Voltage (mV):,Load Voltage (V):,Current (mA):,Power (mW):"
+file.write(headers + "\n")  # Write data with a newline
+print(headers)
 
-samples = 10  # How many samples to collect
-print_labels = False
+ArrayTime = []
+ArrayCurrent = []
 line = 0  # Start at 0 because our header is 0 (not real data)
-while line <= samples:
-    # incoming = ser.read(9999)
-    # if len(incoming) > 0:
-    if print_labels:
-        if line == 0:
-            print("Printing Column Headers")
-        else:
-            print("Line " + str(line) + ": writing...")
+while datetime.datetime.now() <= endTime:  # Alternative while line <= samples:
     getData = str(ser.readline())
+    CurrentTime = datetime.datetime.now()
+    if line == 0:
+        StartTime = CurrentTime
+    ElapsedTime = CurrentTime-StartTime
     data = getData[0:][:-2]
     final_data = data.replace("b'", '')
     final_data = final_data.replace('\\r\\', '')
-    print(final_data)
 
-    file = open(fileName, "a")
-    file.write(final_data + "\n")  # Write data with a newline
-    line = line+1
+    NumOfCommas = final_data.count(',')
+    if NumOfCommas == 4:
+        # line2print = CurrentTime.strftime("%M:%S:%f") + ',' + final_data
+        line2print = str(ElapsedTime.total_seconds()) + ',' + final_data
+        file.write(line2print + "\n")  # Write data with a newline
+        print(line2print)
+        line = line+1
+        ArrayTime.append(ElapsedTime.total_seconds())
+        SplitFinalData = final_data.split(',')
+        ArrayCurrent.append(float(SplitFinalData[3]))
 
-print("Data collection complete!")
 file.close()
+print("\n Data collection complete!")
 
-y = datetime.datetime.now()
+print(ArrayTime)
+print(ArrayCurrent)
 
-time_delta = (y - x)
-total_seconds = time_delta.total_seconds()
-print(total_seconds)
+# plotting the points
+plt.plot(ArrayTime, ArrayCurrent)
+
+# naming the x axis
+plt.xlabel('Time (s)')
+# naming the y axis
+plt.ylabel('Current (mA)')
+
+# giving a title to my graph
+plt.title(fileName)
+
+# function to show the plot
+plt.show()
+

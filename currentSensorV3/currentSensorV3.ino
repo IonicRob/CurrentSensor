@@ -34,10 +34,10 @@ void setup(void)
   // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
   //ina219.setCalibration_16V_400mA();
 
-  Serial.println("Measuring voltage and current with INA219 ...");
+  // Serial.println("Measuring voltage and current with INA219 ...");
 }
 
-bool label = true;
+//bool label = false;
 
 void loop(void) 
 {
@@ -53,30 +53,30 @@ void loop(void)
   power_mW = ina219.getPower_mW();
   loadvoltage = busvoltage + (shuntvoltage / 1000);
 
-  //print out column headers
-  while(label){ //runs once
-        Serial.print("Bus Voltage (V):");
-        Serial.print(",");
-        Serial.print("Shunt Voltage (mV):");
-        Serial.print(",");
-        Serial.print("Load Voltage (V):");
-        Serial.print(",");
-        Serial.print("Current (mA):");
-        Serial.print(",");
-        Serial.println("Power (mW):");
-        label=false;
-  }
+//  //print out column headers
+//  while(label){ //runs once
+//        Serial.print("Bus Voltage (V):");
+//        Serial.print(",");
+//        Serial.print("Shunt Voltage (mV):");
+//        Serial.print(",");
+//        Serial.print("Load Voltage (V):");
+//        Serial.print(",");
+//        Serial.print("Current (mA):");
+//        Serial.print(",");
+//        Serial.println("Power (mW):");
+//        label=false;
+//  }
 
   // Display Data in CSV Format in Serial Monitor
-  Serial.print(busvoltage);
+  Serial.print(busvoltage); // Bus Voltage (V)
+  Serial.print(","); // 
+  Serial.print(shuntvoltage); // Shunt Voltage (mV)
   Serial.print(",");
-  Serial.print(shuntvoltage);
+  Serial.print(loadvoltage); // Load Voltage (V)
   Serial.print(",");
-  Serial.print(loadvoltage);
+  Serial.print(current_mA); // Current (mA)
   Serial.print(",");
-  Serial.print(current_mA);
-  Serial.print(",");
-  Serial.println(power_mW);
+  Serial.println(power_mW); // Power (mW)
 
   
 //  Serial.print("Bus Voltage:   "); Serial.print(busvoltage); Serial.println(" V");
