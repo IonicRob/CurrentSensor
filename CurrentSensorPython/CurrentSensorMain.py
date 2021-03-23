@@ -14,7 +14,7 @@ fileName = "analog-data" + codeStartTime.strftime("_%y-%H-%M-%S") + ".csv"  # Na
 # the date time to avoid it overwriting the file of a same name.
 arduino_port = "COM3"  # Serial port of the Arduino in your PC
 baud = 9600  # Arduino uno runs at 9600 baud
-RecordingDuration = 0.5  # In minutes.
+RecordingDuration = 1  # In minutes.
 
 endTime = datetime.datetime.now() + datetime.timedelta(minutes=RecordingDuration)
 print('Started CurrentSensorV3 @ ' + codeStartTime.strftime("%H:%M:%S") + '\n' + 'Made by Robert J Scales - March 2021')
@@ -59,7 +59,7 @@ print(ArrayTime)
 print(ArrayCurrent)
 
 # plotting the points
-plt.plot(ArrayTime, ArrayCurrent)
+plt.plot(ArrayTime, ArrayCurrent)  # , marker='x', markerfacecolor='red', markersize=12
 
 # naming the x axis
 plt.xlabel('Time (s)')
@@ -71,4 +71,3 @@ plt.title(fileName)
 
 # function to show the plot
 plt.show()
-
