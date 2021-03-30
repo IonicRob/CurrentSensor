@@ -33,52 +33,64 @@ end
 
 [N,edges,bin] = histcounts(TableArray(:,4),(0:1:ceil(max(TableArray(:,4)))));
 
+windowstate = 'normal';
 
+figure('WindowState',windowstate);
+
+% subplot(1,2,1);
+x = TableArray(:,4);
+y = TableArray(:,5);
+sz = 25;
+c = linspace(1,length(x),length(x));
+colormap cool;
+IV_raw = scatter(x,y,sz,c,'s');
+IV_raw.DisplayName = 'Raw';
+title('Raw');
+xlabel('Voltage (V)');
+ylabel('Current (mA)');
+
+% subplot(1,2,2);
+hold on
 x = TableArray(:,4);
 kb = 2;
 kf = 5;
 y = movmean(TableArray(:,5),[kb,kf]);
-sz = 25;
+sz = 30;
 c = linspace(1,length(x),length(x));
-colormap cool
-scatter(x,y,sz,c,'filled');
+colormap cool;
+IV_movmean = scatter(x,y,sz,c,'filled');
+IV_movmean.DisplayName = 'Mov. Ave.';
 % hold on
 % plot(x,y,'r');
 title(sprintf('Moving Average - kb %d, & kf %d',kb,kf));
 xlabel('Voltage (V)');
 ylabel('Current (mA)');
+
 hcb = colorbar;
-hcb.Title
+hcb.Title;
 hcb.Title.String = "Time (s)";
+legend('Location','SouthEast');
 
-figure();
-x = TableArray(:,4);
-y = TableArray(:,5);
-sz = 25;
-c = linspace(1,length(x),length(x));
-colormap cool
-scatter(x,y,sz,c,'filled');
-title('Raw');
-xlabel('Voltage (V)');
-ylabel('Current (mA)');
 
-figure();
+
+figure('WindowState',windowstate);
+subplot(2,1,1);
 x = TableArray(:,1);
 y = TableArray(:,5);
 sz = 25;
 c = linspace(1,10,length(x));
-colormap cool
+colormap cool;
 scatter(x,y,sz,c,'filled');
 title('I vs t');
 xlabel('Time (s)');
 ylabel('Current (mA)');
 
-figure();
+subplot(2,1,2);
 x = TableArray(:,1);
 y = TableArray(:,4);
 sz = 25;
 c = linspace(1,10,length(x));
-colormap cool
+colormap cool;
 scatter(x,y,sz,c,'filled');
 title('V vs t');
 xlabel('Time (s)');
