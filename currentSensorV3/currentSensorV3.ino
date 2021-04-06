@@ -12,7 +12,7 @@ Adafruit_INA219 ina219(0x45);
 
 void setup(void) 
 {
-  Serial.begin(9600); // 115200
+  Serial.begin(115200); // 115200 or 9600
   while (!Serial) {
       // will pause Zero, Leonardo, etc until serial console opens
       delay(1);
@@ -30,7 +30,7 @@ void setup(void)
     while (1) { delay(10); }
   }
   // To use a slightly lower 32V, 1A range (higher precision on amps):
-  //ina219.setCalibration_32V_1A();
+  ina219.setCalibration_32V_1A(); // Uncommented this.
   // Or to use a lower 16V, 400mA range (higher precision on volts and amps):
   //ina219.setCalibration_16V_400mA();
 
@@ -86,5 +86,5 @@ void loop(void)
 //  Serial.print("Power:         "); Serial.print(power_mW); Serial.println(" mW");
 //  Serial.println("");
 
-  delay(1000); //data collection frequency ~x milliseconds
+  delay(100); // Changed from 1000 to 100 . Data collection frequency ~x milliseconds
 }
