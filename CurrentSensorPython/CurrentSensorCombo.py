@@ -1,9 +1,33 @@
+# CurrentSensorCombo Python Code
+# by Robert J Scales April 2021
+#
+# The intention of this code is that it can be solely run, and collect the data from the current logging Arduino device
+# , and whilst it collects the data it has another thread which does a live plot which refreshes at a rate that can be
+# changed by the user.
+#
+#
+# The user settings in this code has been designed to be limited as much as possible. Currently, the only inputs
+# required by the user is to give the session a name for identification, the live plot refresh rate, and whether they
+# want to do a "current vs time" or a "current vs voltage" live plot on the screen.
+# Note, it records all data regardless of the live plotting mode.
+#
+# Things which the user can change, but are recommended not to change, is the baud rate, and the serial_number.
+# The reasoning behind this is that the baud rate should match that of the Arduino code that I wrote. So, if one does
+# want to change that they also have to change the Arduino code in the Arduino.
+# The serial_number should only be inputted if you know the serial number of the current logger Arduino, or
+# if you are using multiple Arduinos and you want to select the correct one.
+#
+#
+# One does not need to specify an exact duration time, as the CSV is appended constantly in each loop,
+# so cancelling the code should stop recording.
+#
+# CurrentSensorAnalysis is recommended to produce graphs for reports post collecting data.
+# It is aesthetically better than the live plot in this code.
+#
+# This is meant to work with my Arduino code after that code is uploaded to the Arduino board itself, keeping it
+# powered on.
+
 from threading import Thread
-import csv
-import time
-import random
-import pandas as pd
-import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import serial  # Communicates with the com port to which the Arduino current logger is plugged in.
 import datetime as dt  # This deals with time in the code.
@@ -12,6 +36,14 @@ import easygui  # This how I achieve a GUI for the "I vs t" or "I vs V" plotting
 import pandas as pd  # Ths is used for accessing the CSV file after creation for data analysis.
 import serial.tools.list_ports as tool_port
 from warnings import warn
+
+
+# Free to Change Settings
+session_name = "Log Current Combo"  # This is the ID for your recording session. Extra details are auto added.
+live_plot_refresh_time = 1000  # This is the refresh rate for the live plot.
+# Not Recommended to Change Settings
+baud_rate = 115200  # This is the baud rate to read the serial port connected to the Arduino.
+current_logger_serial_number = None  # Input None if you do not know the serial_number of the Arduino.
 
 
 def connect_2_arduino(serial_number=None, baud=115200):
@@ -67,10 +99,21 @@ def func_generate():
 
 def func_live_plot():
     def animate(i):
-        data = pd.read_csv(fileName)
-        values_time = data['Time (s):']
-        values_current = data['Current (mA):']
-        values_voltage = data['Load Voltage (V):']
+        try:
+            data = pd.read_csv(fileName)
+        except Exception as er:
+            warn('Could not find automatically generated CSV file!')
+            print(er)
+            return
+
+        try:
+            values_time = data['Time (s):']
+            values_current = data['Current (mA):']
+            values_voltage = data['Load Voltage (V):']
+        except Exception as er:
+            warn('Could not load in column data from CSV file!')
+            print(er)
+            return
 
         plt.cla()
 
@@ -82,19 +125,19 @@ def func_live_plot():
         plt.legend(loc='upper left')
         plt.tight_layout()
 
-    ani = FuncAnimation(plt.gcf(), animate, interval=1000)
+    ani = FuncAnimation(plt.gcf(), animate, interval=live_plot_refresh_time)
 
     plt.tight_layout()
     plt.show()
 
 
-# User Settings
-session_name = "Log Current Combo"  # This is the ID for your recording session. Extra details are auto added.
+# Main Section of Code #
+print("Started: Main Section...")
 
-ser = connect_2_arduino(serial_number=None, baud=115200)
+ser = connect_2_arduino(serial_number=current_logger_serial_number, baud=baud_rate)
 
 # GUI interface for selecting final mode to plot. Useful to have here so that it's added into the file name of the csv.
-print('Select mode...')
+print('User Input: Select mode...')
 TF_IV = easygui.buttonbox('Choose analysis mode:', 'Analysis Mode', ['I vs t', 'I vs V'])
 print(TF_IV)
 
@@ -102,18 +145,23 @@ print(TF_IV)
 fileName = session_name + "_" + TF_IV + "_" + dt.datetime.now().strftime("%H-%M-%S") + ".csv"
 
 # This section initialises the CSV file with the correct headers.
-print('Creating csv file ...')
+print('Started: Creating csv file...')
 with open(fileName, 'w') as csv_file_1:
     headers = "Time (s):,Bus Voltage (V):,Shunt Voltage (mV):,Load Voltage (V):,Current (mA):,Power (mW):"
     csv_file_1.write(headers + "\n")  # Write data with a newline
     print(headers)
+print('Finished: Creating csv file...')
 
 # This defines when the code "starts" recording, and from this defines a time at which the while loop below will end at.
 codeStartTime = dt.datetime.now()
 
+print('Started: Threading section...')
 
 t1 = Thread(target=func_generate)
 t2 = Thread(target=func_live_plot)
 
 t1.start()
 t2.start()
+
+print('Finished: End of code!')
+
