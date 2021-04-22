@@ -47,7 +47,6 @@ from pathlib import Path
 
 
 # Free to Change Settings
-session_name = "Log Current Combo"  # This is the ID for your recording session. Extra details are auto added.
 saving_folder = "C:/Users/ajwgroup/Documents/Robert J Scales/Current Logger Tests/"  # Change "\" to "/".
 live_plot_refresh_time = 100  # This is the refresh rate for the live plot.
 print_values_into_console = False  # Have this set to True to print out the recorded values into the IDE console.
@@ -61,14 +60,13 @@ user_defined_com = None  # Best leave at None, unless it can't search for it, th
 def connect_2_arduino(com=None, serial_number=None, baud=115200):
     # Inspired from https://stackoverflow.com/a/40531041
     # ports = list(tool_port.comports())  # serial.tools.list_ports.comports() .grep('Arduino')
+    print_list_of_ports()
     if com is None:
         if serial_number is None:
             arduino_ports = list(tool_port.grep('USB'))
             if not arduino_ports:
-                print_list_of_ports()
                 raise IOError("No Arduino found")
             if len(arduino_ports) > 1:
-                print_list_of_ports()
                 warn('Multiple Arduinos found - using the first')
             arduino_port = arduino_ports[0].device  # Without the .device it didn't work!
             out_ser = serial.Serial(arduino_port, baud)
@@ -80,7 +78,6 @@ def connect_2_arduino(com=None, serial_number=None, baud=115200):
                     out_ser = serial.Serial(p_info.device, baud)
                     print("Connected to Arduino port:" + p_info.device)
                     return out_ser
-            print_list_of_ports()
             raise IOError("Could not find an arduino - is it plugged in?")
     else:
         arduino_port = com
@@ -150,15 +147,34 @@ def func_live_plot():
     print('Finished: def func_live_plot...')
 
 
+def if_empty_quit(variable, variable_name):
+    if variable is None:
+        # variable_name = f'{variable=}'.split('=')[0]
+        exit(f"Error: {variable_name} was found to be empty\t\nCode ended due to this!")
+
+
 # Main Section of Code #
 print("Started: Main Section...")
+
+if not Path(saving_folder).is_dir():
+    print("Error: Invalid saving directory location (replace with '/' ?)..."
+          "\n\tUser will have to manually select folder...")
+    saving_folder = easygui.diropenbox(msg='Select saving directory:', title='CurrentSensorCombo')
+    print(f"Saving folder chosen was '{saving_folder}'")
+if_empty_quit(saving_folder, 'saving_folder')
+
+session_name = easygui.enterbox(msg='Enter in test name:', title='CurrentSensorCombo',
+                                default='', strip=True, image=None, root=None)
+print(f"session_name = {session_name}\t...")
+# "Log Current Combo"  # This is the ID for your recording session. Extra details are auto added.
+if_empty_quit(session_name, 'session_name')
 
 ser = connect_2_arduino(com=None, serial_number=current_logger_serial_number, baud=baud_rate)  # com='COM3'
 
 # GUI interface for selecting final mode to plot. Useful to have here so that it's added into the file name of the csv.
 print('User Input: Select mode...')
-TF_IV = easygui.buttonbox('Choose analysis mode:', 'Analysis Mode', ['I vs t', 'I vs V'])
-print(TF_IV)
+TF_IV = easygui.buttonbox('Choose analysis mode:', 'CurrentSensorCombo', ['I vs t', 'I vs V'])
+print(f"TF_IV = {TF_IV}")
 
 
 # This is the name of the CSV file which will be automatically created and saved.
