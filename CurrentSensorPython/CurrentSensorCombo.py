@@ -47,7 +47,8 @@ from pathlib import Path
 
 
 # Free to Change Settings
-saving_folder = "C:/Users/ajwgroup/Documents/Robert J Scales/Current Logger Tests/"  # Change "\" to "/".
+saving_folder = "C:/Users/robert/Desktop/CurrentSensorTesting CSV Files/"  # Change "\" to "/" and one at the end. Put
+# in None if you want to manually choose the location each time you run the code.
 live_plot_refresh_time = 100  # This is the refresh rate for the live plot.
 print_values_into_console = False  # Have this set to True to print out the recorded values into the IDE console.
 # Not Recommended to Change Settings
@@ -70,19 +71,19 @@ def connect_2_arduino(com=None, serial_number=None, baud=115200):
                 warn('Multiple Arduinos found - using the first')
             arduino_port = arduino_ports[0].device  # Without the .device it didn't work!
             out_ser = serial.Serial(arduino_port, baud)
-            print("Connected to Arduino port:" + arduino_port)
+            print(f"Connected to Arduino port: {arduino_port}\n\n")
             return out_ser
         else:
             for p_info in serial.tools.list_ports.comports():
                 if p_info.serial_number == serial_number:
                     out_ser = serial.Serial(p_info.device, baud)
-                    print("Connected to Arduino port:" + p_info.device)
+                    print(f"Connected to Arduino port: {p_info.device}\n\n")
                     return out_ser
             raise IOError("Could not find an arduino - is it plugged in?")
     else:
         arduino_port = com
         out_ser = serial.Serial(arduino_port, baud)
-        print("Connected to Arduino port:" + arduino_port)
+        print(f"Connected to Arduino port: {arduino_port}\n\n")
         return out_ser
 
 
@@ -116,7 +117,7 @@ def func_generate():
             break
 
 
-def func_live_plot():
+def func_live_plot_old():
     print('Started: func_live_plot...')
 
     def animate(i):  # The "i" has to be left here!
@@ -131,6 +132,13 @@ def func_live_plot():
             plt.scatter(values_voltage, values_current, label='Current')
         else:
             plt.scatter(values_time, values_current, label='Current')
+            # if plot_ivt:
+            #     ax1 = plt.gca
+            #     ax2 = ax1.twinx()
+            #     color = 'tab:blue'
+            #     ax2.set_ylabel('Voltage [V]', color=color)  # we already handled the x-label with ax1
+            #     ax2.scatter(values_time, values_voltage, label='Voltage', color=color)
+            #     ax2.tick_params(axis='y', labelcolor=color)
 
         plt.legend(loc='upper left')
         plt.tight_layout()
@@ -145,6 +153,49 @@ def func_live_plot():
     plt.tight_layout()
     plt.show()
     print('Finished: def func_live_plot...')
+
+
+def func_live_plot(x1: str, y1: str, x2: str = None, y2: str = None, x3: str = None, y3: str = None):
+    print('Started: func_live_plot_2...')
+
+    live_figure = plt.figure(1)
+
+
+    def animate(i):  # The "i" has to be left here!
+        data = pd.read_csv(fileName)
+
+        if x2 is not None and y2 is not None and x3 is None and y3 is None:
+            plot_list_x = [x1, x2]
+            plot_list_y = [y1, y2]
+            num_list = [211, 212]
+        elif x2 is not None and y2 is not None and x3 is not None and y3 is not None:
+            plot_list_x = [x1, x2, x3]
+            plot_list_y = [y1, y2, y3]
+            num_list = [311, 312, 313]
+        else:
+            plot_list_x = [x1]
+            plot_list_y = [y1]
+            num_list = [111]
+
+        for num in range(len(plot_list_x)):
+            plt.subplot(int(num_list[num]))
+            plt.cla()
+            plt.scatter(data[plot_list_x[num]], data[plot_list_y[num]])
+            plt.xlabel(plot_list_x[num])
+            plt.ylabel(plot_list_y[num])
+
+        plt.tight_layout()
+
+        if keyboard.is_pressed('esc'):
+            print("\nUser has pressed the 'escape' key \n ... and so Live Plot has been paused...")
+            ani.pause()
+
+    print('Started: calling animate...')
+    ani = FuncAnimation(live_figure, animate, interval=live_plot_refresh_time)  # Have to keep ani in there to work!
+
+    plt.tight_layout()
+    plt.show()
+    print('Finished: def func_live_plot_2...')
 
 
 def if_empty_quit(variable, variable_name):
@@ -166,7 +217,6 @@ if_empty_quit(saving_folder, 'saving_folder')
 session_name = easygui.enterbox(msg='Enter in test name:', title='CurrentSensorCombo',
                                 default='', strip=True, image=None, root=None)
 print(f"session_name = {session_name}\t...")
-# "Log Current Combo"  # This is the ID for your recording session. Extra details are auto added.
 if_empty_quit(session_name, 'session_name')
 
 ser = connect_2_arduino(com=None, serial_number=current_logger_serial_number, baud=baud_rate)  # com='COM3'
@@ -175,10 +225,11 @@ ser = connect_2_arduino(com=None, serial_number=current_logger_serial_number, ba
 print('User Input: Select mode...')
 TF_IV = easygui.buttonbox('Choose analysis mode:', 'CurrentSensorCombo', ['I vs t', 'I vs V'])
 print(f"TF_IV = {TF_IV}")
+if_empty_quit(TF_IV, 'Analysis Mode')
 
 
 # This is the name of the CSV file which will be automatically created and saved.
-fileName_proto = session_name + "_" + TF_IV + "_" + dt.datetime.now().strftime("%H-%M-%S") + ".csv"
+fileName_proto = dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S") + "_" + session_name + "_" + TF_IV + ".csv"
 data_folder = Path(saving_folder)
 fileName = data_folder / fileName_proto
 print(f'\nSaving file "{fileName_proto}"\n... in "{data_folder}"...\n')
@@ -201,7 +252,7 @@ t1 = Thread(target=func_generate)
 print("\nHold the 'escape' key on the keyboard to stop the program but keep the plot up...\n")
 
 t1.start()
-func_live_plot()
+func_live_plot('Time (s):', 'Current (mA):', 'Time (s):', 'Load Voltage (V):', 'Load Voltage (V):', 'Current (mA):')
 
 
 print('Finished: End of code!')
