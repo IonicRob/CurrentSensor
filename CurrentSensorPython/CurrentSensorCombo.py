@@ -117,49 +117,10 @@ def func_generate():
             break
 
 
-def func_live_plot_old():
+def func_live_plot(x1: str, y1: str, x2: str = None, y2: str = None, x3: str = None, y3: str = None):
     print('Started: func_live_plot...')
 
-    def animate(i):  # The "i" has to be left here!
-        data = pd.read_csv(fileName)
-        values_time = data['Time (s):']
-        values_current = data['Current (mA):']
-        values_voltage = data['Load Voltage (V):']
-
-        plt.cla()
-
-        if TF_IV == 'I vs V':
-            plt.scatter(values_voltage, values_current, label='Current')
-        else:
-            plt.scatter(values_time, values_current, label='Current')
-            # if plot_ivt:
-            #     ax1 = plt.gca
-            #     ax2 = ax1.twinx()
-            #     color = 'tab:blue'
-            #     ax2.set_ylabel('Voltage [V]', color=color)  # we already handled the x-label with ax1
-            #     ax2.scatter(values_time, values_voltage, label='Voltage', color=color)
-            #     ax2.tick_params(axis='y', labelcolor=color)
-
-        plt.legend(loc='upper left')
-        plt.tight_layout()
-
-        if keyboard.is_pressed('esc'):
-            print("\nUser has pressed the 'escape' key \n ... and so Live Plot has been paused...")
-            ani.pause()
-
-    print('Started: calling animate...')
-    ani = FuncAnimation(plt.gcf(), animate, interval=live_plot_refresh_time)  # Have to keep ani in there to work!
-
-    plt.tight_layout()
-    plt.show()
-    print('Finished: def func_live_plot...')
-
-
-def func_live_plot(x1: str, y1: str, x2: str = None, y2: str = None, x3: str = None, y3: str = None):
-    print('Started: func_live_plot_2...')
-
     live_figure = plt.figure(1)
-
 
     def animate(i):  # The "i" has to be left here!
         data = pd.read_csv(fileName)
@@ -184,8 +145,6 @@ def func_live_plot(x1: str, y1: str, x2: str = None, y2: str = None, x3: str = N
             plt.xlabel(plot_list_x[num])
             plt.ylabel(plot_list_y[num])
 
-        plt.tight_layout()
-
         if keyboard.is_pressed('esc'):
             print("\nUser has pressed the 'escape' key \n ... and so Live Plot has been paused...")
             ani.pause()
@@ -194,8 +153,11 @@ def func_live_plot(x1: str, y1: str, x2: str = None, y2: str = None, x3: str = N
     ani = FuncAnimation(live_figure, animate, interval=live_plot_refresh_time)  # Have to keep ani in there to work!
 
     plt.tight_layout()
+    mng = plt.get_current_fig_manager()
+    mng.window.state('zoomed')  # works fine on Windows!
+
     plt.show()
-    print('Finished: def func_live_plot_2...')
+    print('Finished: def func_live_plot...')
 
 
 def if_empty_quit(variable, variable_name):
@@ -204,9 +166,31 @@ def if_empty_quit(variable, variable_name):
         exit(f"Error: {variable_name} was found to be empty\t\nCode ended due to this!")
 
 
+def things_to_plot_obtainer(tf_iv_input):
+    if len(tf_iv_input) >= 4:
+        exit("Error: 4 or more things were chosen to plot...\n\tToo many inputs chosen for the designed code!")
+    a = []
+    if 'I vs t' in tf_iv_input:
+        a.append('Time (s):')
+        a.append('Current (mA):')
+    if 'V vs t' in tf_iv_input:
+        a.append('Time (s):')
+        a.append('Load Voltage (V):')
+    if 'P vs t' in tf_iv_input:
+        a.append('Time (s):')
+        a.append('Power (mW):')
+    if 'I vs V' in tf_iv_input:
+        a.append('Load Voltage (V):')
+        a.append('Current (mA):')
+    return a
+
+
 # Main Section of Code #
 print("Started: Main Section...")
 
+ser = connect_2_arduino(com=None, serial_number=current_logger_serial_number, baud=baud_rate)  # com='COM3'
+
+# This looks to see if a valid path is typed above, if invalid or None allows user to select.
 if not Path(saving_folder).is_dir():
     print("Error: Invalid saving directory location (replace with '/' ?)..."
           "\n\tUser will have to manually select folder...")
@@ -219,20 +203,20 @@ session_name = easygui.enterbox(msg='Enter in test name:', title='CurrentSensorC
 print(f"session_name = {session_name}\t...")
 if_empty_quit(session_name, 'session_name')
 
-ser = connect_2_arduino(com=None, serial_number=current_logger_serial_number, baud=baud_rate)  # com='COM3'
-
 # GUI interface for selecting final mode to plot. Useful to have here so that it's added into the file name of the csv.
 print('User Input: Select mode...')
-TF_IV = easygui.buttonbox('Choose analysis mode:', 'CurrentSensorCombo', ['I vs t', 'I vs V'])
-print(f"TF_IV = {TF_IV}")
+TF_IV_choices = ['I vs t', 'V vs t', 'P vs t', 'I vs V']
+TF_IV = easygui.multchoicebox(msg='Pick up to 3 options to plot', title='CurrentSensorCombo', choices=TF_IV_choices,
+                              preselect=None, callback=None, run=True)
 if_empty_quit(TF_IV, 'Analysis Mode')
-
+things_to_plot = things_to_plot_obtainer(TF_IV)
 
 # This is the name of the CSV file which will be automatically created and saved.
-fileName_proto = dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S") + "_" + session_name + "_" + TF_IV + ".csv"
+fileName_proto = dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S") + "_" + session_name + ".csv"
 data_folder = Path(saving_folder)
 fileName = data_folder / fileName_proto
 print(f'\nSaving file "{fileName_proto}"\n... in "{data_folder}"...\n')
+
 
 # This section initialises the CSV file with the correct headers.
 print('Started: Creating csv file...')
@@ -252,7 +236,17 @@ t1 = Thread(target=func_generate)
 print("\nHold the 'escape' key on the keyboard to stop the program but keep the plot up...\n")
 
 t1.start()
-func_live_plot('Time (s):', 'Current (mA):', 'Time (s):', 'Load Voltage (V):', 'Load Voltage (V):', 'Current (mA):')
+number_of_plots = len(things_to_plot)/2
+if number_of_plots == 1:
+    func_live_plot(things_to_plot[0], things_to_plot[1])
+elif number_of_plots == 2:
+    func_live_plot(things_to_plot[0], things_to_plot[1], things_to_plot[2], things_to_plot[3])
+elif number_of_plots == 3:
+    func_live_plot(things_to_plot[0], things_to_plot[1], things_to_plot[2], things_to_plot[3],
+                   things_to_plot[4], things_to_plot[5])
+else:
+    print(f"Number of plots selected was found to be {number_of_plots}...")
+    exit("Error: Where func_live_plot is called, number of plots is not an expected number!")
 
 
 print('Finished: End of code!')
