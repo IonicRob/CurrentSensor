@@ -1,5 +1,5 @@
 # CurrentSensorCombo Python Code
-# by Robert J Scales April 2021
+# by Robert J Scales April 26th 2021
 #
 # The intention of this code is that it can be solely run, and collect the data from the current logging Arduino device
 # , and whilst it collects the data it has another thread which does a live plot which refreshes at a rate that can be
@@ -105,7 +105,7 @@ def func_generate():
         final_data = data.replace("b'", '')
         final_data = final_data.replace('\\r\\', '')
 
-        if final_data.count(',') == 4:
+        if final_data.count(',') == 3:
             with open(fileName, 'a') as csv_file:
                 # The below line just adds the elapsed time into the csv file along with the Arduino data.
                 line2print = str(elapsed_time) + ',' + final_data
@@ -171,17 +171,17 @@ def things_to_plot_obtainer(tf_iv_input):
         exit("Error: 4 or more things were chosen to plot...\n\tToo many inputs chosen for the designed code!")
     a = []
     if 'I vs t' in tf_iv_input:
-        a.append('Time (s):')
-        a.append('Current (mA):')
+        a.append('Time [s]')
+        a.append('Current [mA]')
     if 'V vs t' in tf_iv_input:
-        a.append('Time (s):')
-        a.append('Load Voltage (V):')
-    if 'P vs t' in tf_iv_input:
-        a.append('Time (s):')
-        a.append('Power (mW):')
+        a.append('Time [s]')
+        a.append('Voltage [V]')
+    if 'T vs t' in tf_iv_input:
+        a.append('Time [s]')
+        a.append('Probe Temp. [C]')
     if 'I vs V' in tf_iv_input:
-        a.append('Load Voltage (V):')
-        a.append('Current (mA):')
+        a.append('Voltage [V]')
+        a.append('Current [mA]')
     return a
 
 
@@ -205,7 +205,7 @@ if_empty_quit(session_name, 'session_name')
 
 # GUI interface for selecting final mode to plot. Useful to have here so that it's added into the file name of the csv.
 print('User Input: Select mode...')
-TF_IV_choices = ['I vs t', 'V vs t', 'P vs t', 'I vs V']
+TF_IV_choices = ['I vs t', 'V vs t', 'T vs t', 'I vs V']
 TF_IV = easygui.multchoicebox(msg='Pick up to 3 options to plot', title='CurrentSensorCombo', choices=TF_IV_choices,
                               preselect=None, callback=None, run=True)
 if_empty_quit(TF_IV, 'Analysis Mode')
@@ -221,7 +221,7 @@ print(f'\nSaving file "{fileName_proto}"\n... in "{data_folder}"...\n')
 # This section initialises the CSV file with the correct headers.
 print('Started: Creating csv file...')
 with open(fileName, 'w') as csv_file_1:
-    headers = "Time (s):,Bus Voltage (V):,Shunt Voltage (mV):,Load Voltage (V):,Current (mA):,Power (mW):"
+    headers = "Time [s],Voltage [V],Current [mA],Probe Temp. [C],Device Temp. [C]"
     csv_file_1.write(headers + "\n")  # Write data with a newline
     print(headers)
 print('Finished: Creating csv file...\n')
