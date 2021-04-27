@@ -97,7 +97,7 @@ def print_list_of_ports():
 
 
 def func_generate():
-    print(f"Adding to CSV file names {fileName}")
+    print(f"Started: func_generate...\n\tAdding to CSV file names {fileName}...")
     while True:
         get_data = str(ser.readline())  # This accesses the serial port information which the Arduino is outputting.
         elapsed_time = (dt.datetime.now() - codeStartTime).total_seconds()  # Records acquisition time.
