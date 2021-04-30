@@ -47,8 +47,9 @@ from pathlib import Path
 
 
 # Free to Change Settings
-saving_folder = "C:/Users/robert/Desktop/CurrentSensorTesting CSV Files/"  # Change "\" to "/" and one at the end. Put
-# in None if you want to manually choose the location each time you run the code.
+saving_folder = "C:/Users/ajwgroup/Documents/Robert J Scales/2021-04-29 EP Bech Ti/"
+# Change "\" to "/" and one at the end. Put in None if you want to manually choose the location each time
+# you run the code.
 live_plot_refresh_time = 100  # This is the refresh rate for the live plot.
 print_values_into_console = False  # Have this set to True to print out the recorded values into the IDE console.
 # Not Recommended to Change Settings
@@ -98,6 +99,7 @@ def print_list_of_ports():
 
 def func_generate():
     print(f"Started: func_generate...\n\tAdding to CSV file names {fileName}...")
+    print_values_into_console = False
     while True:
         get_data = str(ser.readline())  # This accesses the serial port information which the Arduino is outputting.
         elapsed_time = (dt.datetime.now() - codeStartTime).total_seconds()  # Records acquisition time.
@@ -117,26 +119,29 @@ def func_generate():
             break
 
 
-def func_live_plot(x1: str, y1: str, x2: str = None, y2: str = None, x3: str = None, y3: str = None):
+def func_live_plot(x1: str, y1: str, x2: str = None, y2: str = None, x3: str = None, y3: str = None,
+                   x4: str = None, y4: str = None):
     print('Started: func_live_plot...')
 
     live_figure = plt.figure(1)
 
     def animate(i):  # The "i" has to be left here!
         data = pd.read_csv(fileName)
-
-        if x2 is not None and y2 is not None and x3 is None and y3 is None:
-            plot_list_x = [x1, x2]
-            plot_list_y = [y1, y2]
-            num_list = [211, 212]
-        elif x2 is not None and y2 is not None and x3 is not None and y3 is not None:
-            plot_list_x = [x1, x2, x3]
-            plot_list_y = [y1, y2, y3]
-            num_list = [311, 312, 313]
-        else:
-            plot_list_x = [x1]
-            plot_list_y = [y1]
-            num_list = [111]
+        plot_list_x = [x1, x2, x3, x4]
+        plot_list_y = [y1, y2, y3, y4]
+        num_list = [221, 222, 223, 224]
+        # if x2 is not None and y2 is not None and x3 is None and y3 is None:
+        #     plot_list_x = [x1, x2]
+        #     plot_list_y = [y1, y2]
+        #     num_list = [211, 212]
+        # elif x2 is not None and y2 is not None and x3 is not None and y3 is not None:
+        #     plot_list_x = [x1, x2, x3]
+        #     plot_list_y = [y1, y2, y3]
+        #     num_list = [311, 312, 313]
+        # else:
+        #     plot_list_x = [x1]
+        #     plot_list_y = [y1]
+        #     num_list = [111]
 
         for num in range(len(plot_list_x)):
             plt.subplot(int(num_list[num]))
@@ -203,13 +208,14 @@ session_name = easygui.enterbox(msg='Enter in test name:', title='CurrentSensorC
 print(f"session_name = {session_name}\t...")
 if_empty_quit(session_name, 'session_name')
 
-# GUI interface for selecting final mode to plot. Useful to have here so that it's added into the file name of the csv.
-print('User Input: Select mode...')
-TF_IV_choices = ['I vs t', 'V vs t', 'T vs t', 'I vs V']
-TF_IV = easygui.multchoicebox(msg='Pick up to 3 options to plot', title='CurrentSensorCombo', choices=TF_IV_choices,
-                              preselect=None, callback=None, run=True)
-if_empty_quit(TF_IV, 'Analysis Mode')
-things_to_plot = things_to_plot_obtainer(TF_IV)
+# # GUI interface for selecting final mode to plot.
+# Useful to have here so that it's added into the file name of the csv.
+# print('User Input: Select mode...')
+# TF_IV_choices = ['I vs t', 'V vs t', 'T vs t', 'I vs V']
+# TF_IV = easygui.multchoicebox(msg='Pick up to 3 options to plot', title='CurrentSensorCombo', choices=TF_IV_choices,
+#                               preselect=None, callback=None, run=True)
+# if_empty_quit(TF_IV, 'Analysis Mode')
+# things_to_plot = things_to_plot_obtainer(TF_IV)
 
 # This is the name of the CSV file which will be automatically created and saved.
 fileName_proto = dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S") + "_" + session_name + ".csv"
@@ -219,9 +225,10 @@ print(f'\nSaving file "{fileName_proto}"\n... in "{data_folder}"...\n')
 
 
 # This section initialises the CSV file with the correct headers.
+headings_list = ['Time [s]', 'Voltage [V]', 'Current [mA]', 'Probe Temp. [C]', 'Device Temp. [C]']
 print('Started: Creating csv file...')
 with open(fileName, 'w') as csv_file_1:
-    headers = "Time [s],Voltage [V],Current [mA],Probe Temp. [C],Device Temp. [C]"
+    headers = ','.join(headings_list)  # "Time [s],Voltage [V],Current [mA],Probe Temp. [C],Device Temp. [C]"
     csv_file_1.write(headers + "\n")  # Write data with a newline
     print(headers)
 print('Finished: Creating csv file...\n')
@@ -236,17 +243,19 @@ t1 = Thread(target=func_generate)
 print("\nHold the 'escape' key on the keyboard to stop the program but keep the plot up...\n")
 
 t1.start()
-number_of_plots = len(things_to_plot)/2
-if number_of_plots == 1:
-    func_live_plot(things_to_plot[0], things_to_plot[1])
-elif number_of_plots == 2:
-    func_live_plot(things_to_plot[0], things_to_plot[1], things_to_plot[2], things_to_plot[3])
-elif number_of_plots == 3:
-    func_live_plot(things_to_plot[0], things_to_plot[1], things_to_plot[2], things_to_plot[3],
-                   things_to_plot[4], things_to_plot[5])
-else:
-    print(f"Number of plots selected was found to be {number_of_plots}...")
-    exit("Error: Where func_live_plot is called, number of plots is not an expected number!")
+func_live_plot(headings_list[0], headings_list[2], headings_list[0], headings_list[1],
+               headings_list[1], headings_list[2], headings_list[0], headings_list[3])
+# number_of_plots = len(things_to_plot)/2
+# if number_of_plots == 1:
+#     func_live_plot(things_to_plot[0], things_to_plot[1])
+# elif number_of_plots == 2:
+#     func_live_plot(things_to_plot[0], things_to_plot[1], things_to_plot[2], things_to_plot[3])
+# elif number_of_plots == 3:
+#     func_live_plot(things_to_plot[0], things_to_plot[1], things_to_plot[2], things_to_plot[3],
+#                    things_to_plot[4], things_to_plot[5])
+# else:
+#     print(f"Number of plots selected was found to be {number_of_plots}...")
+#     exit("Error: Where func_live_plot is called, number of plots is not an expected number!")
 
 
 print('Finished: End of code!')
